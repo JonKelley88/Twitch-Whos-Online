@@ -24,6 +24,7 @@ function forEachAsync(obj, cb) {
 	 * @return  false/forEachAsync
 	 */
 	var done = function() {
+		console.log(obj);
 		if(obj.value.length <= 0)
 			return false;
 		else 
@@ -37,79 +38,106 @@ function forEachAsync(obj, cb) {
 	
 }
 
-function online
+var TwitchUser = function(clientId, username, cb) {
 
-var TwitchUser = {}
-TwitchUser.prototype.isOnline = function() {
-	var self = this;
-	$.getJSON(this.streamURL, function(data) {
-		if(data.stream === null)
-			self.online = false;
-		else
-			self.online = true;
-	});
-}
-
-TwitchUser.prototype.getInfo = function() {
-	var self = this;
-	$.getJSON(this.channelURL, function(data) {
-		self.name = data.display_name;
-		if(data.logo !== null)
-			self.logo = data.logo;
-		self.game = data.game;
-		self.url = data.url;
-	})
-}
-TwitchUser.prototype.constructor = function(clientId, username) {
 	this.streamURL = "https://api.twitch.tv/kraken/streams/" + username + "?client_id=" + clientId;
 	this.channelURL = "https://api.twitch.tv/kraken/channels/" + username + "?client_id=" + clientId;
 
-	this.online = fase;
+	this.online = false;
+	this.username = username;
 	this.name = '';
 	this.game = '';
 	this.url = '';
 	this.logo = 'https://static-cdn.jtvnw.net/jtv_user_pictures/xarth/404_user_600x600.png';
+	
+	var self = this;
 
-	this.isOnline();
-	this.getInfo();
+	var isOnline = function(cb) {
+		$.getJSON(self.streamURL, function(data) {
+			if(data.stream === null)
+				self.online = false;
+			else
+				self.online = true;
+			cb()
+		}).fail(function() {
+			self.online = "404 Not Found";
+		})
+	};
+	var getInfo = function(cb) {
+		$.getJSON(self.channelURL, function(data) {
+			self.name = data.display_name;
+			if(data.logo !== null)
+				self.logo = data.logo;
+			self.game = data.game;
+			self.url = data.url;
+			cb()
+		}).fail(function() {
+			self.online = "404 Not Found";
+			self.name = self.username;
+			self.game = '';
+			self.url = 'https://www.twitch.tv/404';
+			cb()
+		})
+	};
+
+	isOnline(function() {
+		getInfo(function() {
+			setStreamer(self, cb);
+		});
+	});
+	
 }
 
-function setStreamer(TwitchUser) {
-	if (!TwitchUser.online) {
+function setStreamer(TwitchUser, cb) {
+	var html = "<a href = '";
+	if(TwitchUser.online.constructor === String) {
+		html += TwitchUser.url;
+		html += "' target='_blank'><div class = 'container-fluid'><div class = 'row offline'><div class = 'col-3 vcenter'><img src = '";
+		html += TwitchUser.logo;
+		html += "' class = 'logo'></div><div class = 'col-9'><h2 class = 'upper'>";
+		html += TwitchUser.name;
+		html += "</h2><br><p class = 'status'><i>";
+		html += "404 Not Found";
+		html += "</i></p></div></div></div></a>";
 		$("#streamersOff")
-			.prepend("<a href = '" + 
-				TwitchUser.url + 
-				"' target='_blank'><div class = 'container-fluid'><div class = 'row offline'><div class = 'col-3 vcenter'><img src = '" + 
-				TwitchUser.logo + 
-				"' class = 'logo'></div><div class = 'col-9'><h2 class = 'upper'>" + 
-				TwitchUser.name + 
-				"</h2><br><p class = 'status'><i>Offline</i></p></div></div></div></a>"
-			);
+			.prepend(html);
+	} else if (!TwitchUser.online) {
+		html += TwitchUser.url;
+		html += "' target='_blank'><div class = 'container-fluid'><div class = 'row offline'><div class = 'col-3 vcenter'><img src = '";
+		html += TwitchUser.logo;
+		html += "' class = 'logo'></div><div class = 'col-9'><h2 class = 'upper'>";
+		html += TwitchUser.name;
+		html += "</h2><br><p class = 'status'><i>Offline</i></p></div></div></div></a>";
+		$("#streamersOff")
+			.prepend(html);
 	} else {
+		html +=	TwitchUser.url;
+		html += "' target='_blank'><div class = 'container-fluid cards'><div class = 'row online'><div class = 'col-3 vcenter'><img src = '";
+		html += TwitchUser.logo;
+		html += "' class = 'logo'></div><div class = 'col-9'><h2 class = 'upper text-center'>";
+		html += TwitchUser.name;
+		html += "</h2><br><p class = 'status'>Playing ";
+		html += TwitchUser.game;
+		html += "</p></div></div></div></a>";
 		$("#streamers")
-			.prepend("<a href = '" + 
-				TwitchUser.url + 
-				"' target='_blank'><div class = 'container-fluid cards'><div class = 'row online'><div class = 'col-3 vcenter'><img src = '" + 
-				TwitchUser.logo + 
-				"' class = 'logo'></div><div class = 'col-9'><h2 class = 'upper text-center'>" + 
-				TwitchUser.name + 
-				"</h2><br><p class = 'status'>Playing " + 
-				TwitchUser.game + 
-				"</p></div></div></div></a>"
-			);
+			.prepend(html);
+	}
+	cb();
 }
 
 function getUsers(users) {
+
 	forEachAsync(users, function(i, user, done) {
-		var user = new TwitcherUser(clientId, user);
-		setStreamer(user);
+		var streamer = new TwitchUser(clientId, user, function() {
+			done();
+		});
 	});
 }
 
-$(document).ready(function() {
-	var usernames = ["FreeCodeCamp", "lirik", "giantwaffle", "shortyyguy", "timthetatman", "scrubkillarl_", "blackfoxy12", "activee", "monstercat", "miramisu", "kronovi"];
-	var clientId = "8yiglzu05taulkg1gdg9co5viztolv";
+var usernames = ["FreeCodeCamp", "lirik", "giantwaffle", "shortyyguy", "timthetatman", "scrubkillarl_", "blackfoxy12", "activee", "monstercat", "miramisu", "kronovi"];
+var clientId = "8yiglzu05taulkg1gdg9co5viztolv";
 
+$(document).ready(function() {
 	var cssOn = {
 		color: "white",
 		boxShadow: "0px 3px 3px rgba(0, 0, 0, 0.3), inset 0px 0px 10px 3px rgba(255, 255, 255, 0.3)",
@@ -152,14 +180,14 @@ $(document).ready(function() {
 		$("#searchBar").val("");
 		if (add === "") {
 			$(".error").html("<p>Add a username</p>");
-			getUsers();
+			getUsers(usernames, clientId);
 		} else if ($(".error") && add) {
 			usernames.push(add);
 			$(".error").empty();
-			getUsers();
+			getUsers(usernames, clientId);
 		} else {
 			usernames.push(add);
-			getUsers();
+			getUsers(usernames, clientId);
 		}
 	}); // end of #plus.click
 	// ~~ Uses the #plus.click to include pressing enter ~~//
@@ -168,4 +196,5 @@ $(document).ready(function() {
 			$("#plus").click();
 		}
 	}); // end of input.keyup
+	getUsers(usernames, clientId);
 }); // end of ready
