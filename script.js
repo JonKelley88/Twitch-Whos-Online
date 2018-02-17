@@ -37,76 +37,113 @@ function forEachAsync(obj, cb) {
 	
 }
 
+function online
+
+var TwitchUser = {}
+TwitchUser.prototype.isOnline = function() {
+	var self = this;
+	$.getJSON(this.streamURL, function(data) {
+		if(data.stream === null)
+			self.online = false;
+		else
+			self.online = true;
+	});
+}
+
+TwitchUser.prototype.getInfo = function() {
+	var self = this;
+	$.getJSON(this.channelURL, function(data) {
+		self.name = data.display_name;
+		if(data.logo !== null)
+			self.logo = data.logo;
+		self.game = data.game;
+		self.url = data.url;
+	})
+}
+TwitchUser.prototype.constructor = function(clientId, username) {
+	this.streamURL = "https://api.twitch.tv/kraken/streams/" + username + "?client_id=" + clientId;
+	this.channelURL = "https://api.twitch.tv/kraken/channels/" + username + "?client_id=" + clientId;
+
+	this.online = fase;
+	this.name = '';
+	this.game = '';
+	this.url = '';
+	this.logo = 'https://static-cdn.jtvnw.net/jtv_user_pictures/xarth/404_user_600x600.png';
+
+	this.isOnline();
+	this.getInfo();
+}
+
+function setStreamer(TwitchUser) {
+	if (!TwitchUser.online) {
+		$("#streamersOff")
+			.prepend("<a href = '" + 
+				TwitchUser.url + 
+				"' target='_blank'><div class = 'container-fluid'><div class = 'row offline'><div class = 'col-3 vcenter'><img src = '" + 
+				TwitchUser.logo + 
+				"' class = 'logo'></div><div class = 'col-9'><h2 class = 'upper'>" + 
+				TwitchUser.name + 
+				"</h2><br><p class = 'status'><i>Offline</i></p></div></div></div></a>"
+			);
+	} else {
+		$("#streamers")
+			.prepend("<a href = '" + 
+				TwitchUser.url + 
+				"' target='_blank'><div class = 'container-fluid cards'><div class = 'row online'><div class = 'col-3 vcenter'><img src = '" + 
+				TwitchUser.logo + 
+				"' class = 'logo'></div><div class = 'col-9'><h2 class = 'upper text-center'>" + 
+				TwitchUser.name + 
+				"</h2><br><p class = 'status'>Playing " + 
+				TwitchUser.game + 
+				"</p></div></div></div></a>"
+			);
+}
+
+function getUsers(users) {
+	forEachAsync(users, function(i, user, done) {
+		var user = new TwitcherUser(clientId, user);
+		setStreamer(user);
+	});
+}
+
 $(document).ready(function() {
 	var usernames = ["FreeCodeCamp", "lirik", "giantwaffle", "shortyyguy", "timthetatman", "scrubkillarl_", "blackfoxy12", "activee", "monstercat", "miramisu", "kronovi"];
+	var clientId = "8yiglzu05taulkg1gdg9co5viztolv";
 
-	function getUsers() {
-		for (i = 0; i < usernames.length; i++) {
-			(function(i) {
-				var streamsURL = "https://api.twitch.tv/kraken/streams/" + usernames[i] + "?client_id=8yiglzu05taulkg1gdg9co5viztolv";
-				var channelsURL = "https://api.twitch.tv/kraken/channels/" + usernames[i] + "?client_id=8yiglzu05taulkg1gdg9co5viztolv";
-				// ~~ getJSON for stream info ~~ //
-				$.getJSON(streamsURL, function(data1) {
-					var online = "";
-					if (data1.stream === null) {
-						online = false;
-					} else {
-						online = true;
-					}
-					// ~~ nested getJSON for channel info ~~ //
-					$.getJSON(channelsURL, function(data2) {
-						// ~~ Checks if the streamer has a logo ~~ //
-						if (data2.logo === null) {
-							logo = "https://static-cdn.jtvnw.net/jtv_user_pictures/xarth/404_user_600x600.png";
-						} else {
-							logo = data2.logo;
-						}
-						name = data2.display_name;
-						game = data2.game;
-						link = data2.url;
-						if (online === true) {
-							$("#streamers").prepend("<a href = '" + link + "' target='_blank'><div class = 'container-fluid cards'><div class = 'row online'><div class = 'col-3 vcenter'><img src = '" + logo + "' class = 'logo'></div><div class = 'col-9'><h2 class = 'upper text-center'>" + name + "</h2><br><p class = 'status'>Playing " + game + "</p></div></div></div></a>");
-						} else {
-							$("#streamersOff").prepend("<a href = '" + link + "' target='_blank'><div class = 'container-fluid'><div class = 'row offline'><div class = 'col-3 vcenter'><img src = '" + logo + "' class = 'logo'></div><div class = 'col-9'><h2 class = 'upper'>" + name + "</h2><br><p class = 'status'><i>Offline</i></p></div></div></div></a>");
-						} // end of if statement
-					}); // end of nested getJSON
-				}); // end of first getJSON
-			})(i); // end of IIFE
-		} // end of for loop
-		// ~~ Online - All - Offline sorter ~~ //
-		var cssOn = {
-			color: "white",
-			boxShadow: "0px 3px 3px rgba(0, 0, 0, 0.3), inset 0px 0px 10px 3px rgba(255, 255, 255, 0.3)",
-			textShadow: "0 3px 3px rgba(0, 0, 0, 0.3)"
-		};
-		var cssOff = {
-			color: "#A28DC8",
-			boxShadow: "0px 3px 3px rgba(0, 0, 0, 0.3)",
-			textShadow: "none"
-		};
-		$("#on").click(function() {
-			$("#streamers").show();
-			$("#streamersOff").hide();
-			$("#on").css(cssOn);
-			$("#all").css(cssOff);
-			$("#off").css(cssOff);
-		});
-		$("#all").click(function() {
-			$("#streamers").show();
-			$("#streamersOff").show();
-			$("#on").css(cssOff);
-			$("#all").css(cssOn);
-			$("#off").css(cssOff);
-		});
-		$("#off").click(function() {
-			$("#streamers").hide();
-			$("#streamersOff").show();
-			$("#on").css(cssOff);
-			$("#all").css(cssOff);
-			$("#off").css(cssOn);
-		});
-	} // end of getUsers function
-	getUsers();
+	var cssOn = {
+		color: "white",
+		boxShadow: "0px 3px 3px rgba(0, 0, 0, 0.3), inset 0px 0px 10px 3px rgba(255, 255, 255, 0.3)",
+		textShadow: "0 3px 3px rgba(0, 0, 0, 0.3)"
+	};
+	var cssOff = {
+		color: "#A28DC8",
+		boxShadow: "0px 3px 3px rgba(0, 0, 0, 0.3)",
+		textShadow: "none"
+	};
+	$("#on").click(function() {
+		$("#streamers").show();
+		$("#streamersOff").hide();
+		$("#on").css(cssOn);
+		$("#all").css(cssOff);
+		$("#off").css(cssOff);
+	});
+	$("#all").click(function() {
+		$("#streamers").show();
+		$("#streamersOff").show();
+		$("#on").css(cssOff);
+		$("#all").css(cssOn);
+		$("#off").css(cssOff);
+	});
+	$("#off").click(function() {
+		$("#streamers").hide();
+		$("#streamersOff").show();
+		$("#on").css(cssOff);
+		$("#all").css(cssOff);
+		$("#off").css(cssOn);
+	});
+
+
+
 	// ~~ Push a new name to the usernames array ~~ //
 	$("#plus").click(function() {
 		$(".online, .offline").remove();
@@ -117,11 +154,11 @@ $(document).ready(function() {
 			$(".error").html("<p>Add a username</p>");
 			getUsers();
 		} else if ($(".error") && add) {
-			usernames.push(usernames, add);
+			usernames.push(add);
 			$(".error").empty();
 			getUsers();
 		} else {
-			usernames.push(usernames, add);
+			usernames.push(add);
 			getUsers();
 		}
 	}); // end of #plus.click
