@@ -1,3 +1,42 @@
+/**
+ * @author 	Jon Taylor
+ * @define 	To provide an async alternative to for loop.
+ * @arg 		obj	Object
+ * @arg			cb 	callback
+ * @return 	(key, value, done) 
+ * @example var arr = ['kevin', 'jack', 'john', 'jimmy', 'fank']
+ * 		forEachAsync(arr, function(key, val, done) {
+ * 		// Perform your code to check what you want to check
+ * 		if(key === 4) {  // checking for if this is the 5th item in the array
+ * 			console.log(val);
+ * 		done();
+ * });
+ */
+function forEachAsync(obj, cb) {
+	if(!obj.value) obj = {
+		value : Object.values(obj),
+		key : Object.keys(obj)
+	}
+
+	/**
+	 * @author 	Jon Taylor
+	 * @define 	Checks if there is there are any more left inside the loop.
+	 * @return  false/forEachAsync
+	 */
+	var done = function() {
+		if(obj.value.length <= 0)
+			return false;
+		else 
+			forEachAsync(obj, cb);
+	}
+
+	// To prevent Stack Overlfow
+	setTimeout(function() {
+		cb(obj.key.shift(), obj.value.shift(), done);
+	}, 10)
+	
+}
+
 $(document).ready(function() {
 	var usernames = ["FreeCodeCamp", "lirik", "giantwaffle", "shortyyguy", "timthetatman", "scrubkillarl_", "blackfoxy12", "activee", "monstercat", "miramisu", "kronovi"];
 
