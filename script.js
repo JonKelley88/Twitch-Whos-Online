@@ -12,6 +12,8 @@
  * 		done();
  * });
  */
+
+ // Test
 function forEachAsync(obj, cb) {
 	if(!obj.value) obj = {
 		value : Object.values(obj),
